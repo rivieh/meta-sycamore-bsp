@@ -1,0 +1,37 @@
+From 739fbe4f2ed5f05643f67673ffecb2405f62b95a Mon Sep 17 00:00:00 2001
+From: Mustafa Homsi <Mustafa.Homsi@rivieh.com>
+Date: Sun, 5 Jun 2022 14:06:43 -0700
+Subject: [PATCH] added imx8mn-550p2-rev2 board configration
+
+---
+ arch/arm/mach-imx/imx8m/Kconfig | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index 9e5b6d7ffa..8495a9dbf8 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -201,6 +201,16 @@ config TARGET_PHYCORE_IMX8MP
+ 	select IMX8MP
+         select SUPPORT_SPL
+ 	select IMX8M_LPDDR4
++
++config TARGET_IMX8MN_550P2_REV2
++	bool "imx8mn DDR3 EVK with 550.2V2 board"
++	select IMX8MN
++	select SUPPORT_SPL
++	select IMX8M_DDR3L
++	select FSL_CAAM
++	select FSL_BLOB
++	select MISC
++	select SPL_CRYPTO_SUPPORT if SPL
+ endchoice
+ 
+ source "board/freescale/imx8mq_evk/Kconfig"
+@@ -217,5 +227,6 @@ source "board/beacon/imx8mm/Kconfig"
+ source "board/beacon/imx8mn/Kconfig"
+ source "board/phytec/phycore_imx8mm/Kconfig"
+ source "board/phytec/phycore_imx8mp/Kconfig"
++source "board/rivieh/imx8mn-550p2-rev2/Kconfig"
+ 
+ endif

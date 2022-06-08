@@ -1,0 +1,6 @@
+i.MX8MN 550P2 REV2 BOARD
+M:	Mustafa Homsi <mustafa.homsi@rivieh.com>
+S:	Maintained
+F:	board/rivieh/imx8mn-550p2-rev2/
+F:	include/configs/imx8mn-550p2-rev2.h
+F:	configs/imx8mn-550p2-rev2_defconfig
