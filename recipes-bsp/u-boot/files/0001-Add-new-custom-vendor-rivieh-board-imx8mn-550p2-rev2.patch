@@ -1,0 +1,2136 @@
+From efe08d263d46c4ec1f9e700e6748a8e70fbcd688 Mon Sep 17 00:00:00 2001
+From: Saravanan Sekar <saravanan@linumiz.com>
+Date: Sat, 11 Jun 2022 11:08:34 +0200
+Subject: [PATCH] Add new custom vendor rivieh board imx8mn-550p2-rev2
+
+Signed-off-by: Saravanan Sekar <saravanan@linumiz.com>
+---
+ arch/arm/dts/Makefile                         |   1 +
+ arch/arm/dts/imx8mn-550p2-rev2.dts            |  27 +
+ arch/arm/mach-imx/imx8m/Kconfig               |  11 +
+ board/rivieh/imx8mn-550p2-rev2/Kconfig        |  18 +
+ board/rivieh/imx8mn-550p2-rev2/MAINTAINERS    |   6 +
+ board/rivieh/imx8mn-550p2-rev2/Makefile       |  14 +
+ board/rivieh/imx8mn-550p2-rev2/README         |   1 +
+ board/rivieh/imx8mn-550p2-rev2/ddr3l_timing.c | 944 ++++++++++++++++++
+ .../imx8mn-550p2-rev2/imx8mn-550p2-rev2.c     | 346 +++++++
+ board/rivieh/imx8mn-550p2-rev2/spl.c          | 233 +++++
+ configs/imx8mn-550p2-rev2_defconfig           | 145 +++
+ include/configs/imx8mn-550p2-rev2.h           | 267 +++++
+ 12 files changed, 2013 insertions(+)
+ create mode 100644 arch/arm/dts/imx8mn-550p2-rev2.dts
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/Kconfig
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/MAINTAINERS
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/Makefile
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/README
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/ddr3l_timing.c
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/imx8mn-550p2-rev2.c
+ create mode 100644 board/rivieh/imx8mn-550p2-rev2/spl.c
+ create mode 100644 configs/imx8mn-550p2-rev2_defconfig
+ create mode 100644 include/configs/imx8mn-550p2-rev2.h
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index aa0c6a75c3..03d72b711b 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -864,6 +864,7 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
+ 	imx8mm-verdin.dtb \
+ 	phycore-imx8mm.dtb \
+ 	imx8mn-ddr3l-evk.dtb \
++	imx8mn-550p2-rev2.dtb \
+ 	imx8mn-ddr4-evk.dtb \
+ 	imx8mn-evk.dtb \
+ 	imx8mq-ddr3l-val.dtb \
+diff --git a/arch/arm/dts/imx8mn-550p2-rev2.dts b/arch/arm/dts/imx8mn-550p2-rev2.dts
+new file mode 100644
+index 0000000000..57e30f7427
+--- /dev/null
++++ b/arch/arm/dts/imx8mn-550p2-rev2.dts
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: GPL-2.0+
++ /*
++  * Copyright 2020 NXP
++  */
++
++#include "imx8mn-evk.dts"
++#include "imx8mn-evk-u-boot.dtsi"
++
++/ {
++	model = "NXP i.MX8MNano DDR3L EVK board";
++};
++
++&dsi_host {
++	status = "disabled";
++};
++
++&{/rm67191_panel} {
++	status = "disabled";
++};
++
++&lcdif {
++	status = "disabled";
++};
++
++&mipi_dsi {
++	status = "disabled";
++};
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index 9e5b6d7ffa..8495a9dbf8 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -201,6 +201,16 @@ config TARGET_PHYCORE_IMX8MP
+ 	select IMX8MP
+         select SUPPORT_SPL
+ 	select IMX8M_LPDDR4
++
++config TARGET_IMX8MN_550P2_REV2
++	bool "imx8mn DDR3 EVK with 550.2V2 board"
++	select IMX8MN
++	select SUPPORT_SPL
++	select IMX8M_DDR3L
++	select FSL_CAAM
++	select FSL_BLOB
++	select MISC
++	select SPL_CRYPTO_SUPPORT if SPL
+ endchoice
+ 
+ source "board/freescale/imx8mq_evk/Kconfig"
+@@ -217,5 +227,6 @@ source "board/beacon/imx8mm/Kconfig"
+ source "board/beacon/imx8mn/Kconfig"
+ source "board/phytec/phycore_imx8mm/Kconfig"
+ source "board/phytec/phycore_imx8mp/Kconfig"
++source "board/rivieh/imx8mn-550p2-rev2/Kconfig"
+ 
+ endif
+diff --git a/board/rivieh/imx8mn-550p2-rev2/Kconfig b/board/rivieh/imx8mn-550p2-rev2/Kconfig
+new file mode 100644
+index 0000000000..99aba52b46
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/Kconfig
+@@ -0,0 +1,18 @@
++if TARGET_IMX8MN_550P2_REV2
++
++config SYS_BOARD
++	default "imx8mn-550p2-rev2"
++
++config SYS_VENDOR
++	default "rivieh"
++
++config SYS_CONFIG_NAME
++	default "imx8mn-550p2-rev2"
++
++config IMX8MN_LOW_DRIVE_MODE
++	bool "Enable the low drive mode of iMX8MN on EVK board"
++	default n
++
++source "board/freescale/common/Kconfig"
++
++endif
+diff --git a/board/rivieh/imx8mn-550p2-rev2/MAINTAINERS b/board/rivieh/imx8mn-550p2-rev2/MAINTAINERS
+new file mode 100644
+index 0000000000..a80ceb246e
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/MAINTAINERS
+@@ -0,0 +1,6 @@
++i.MX8MN 550P2 REV2 BOARD
++M:	Mustafa Homsi <mustafa.homsi@rivieh.com>
++S:	Maintained
++F:	board/rivieh/imx8mn-550p2-rev2/
++F:	include/configs/imx8mn-550p2-rev2.h
++F:	configs/imx8mn-550p2-rev2_defconfig
+diff --git a/board/rivieh/imx8mn-550p2-rev2/Makefile b/board/rivieh/imx8mn-550p2-rev2/Makefile
+new file mode 100644
+index 0000000000..f9c27abb97
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/Makefile
+@@ -0,0 +1,14 @@
++#
++# Copyright 2022 RIVIEH, Inc.
++#
++# SPDX-License-Identifier:      GPL-2.0+
++#
++
++obj-y += imx8mn-550p2-rev2.o
++
++ifdef CONFIG_SPL_BUILD
++obj-y += spl.o
++obj-y += ddr3l_timing.o
++endif
++
++obj-y += ../../freescale/common/
+diff --git a/board/rivieh/imx8mn-550p2-rev2/README b/board/rivieh/imx8mn-550p2-rev2/README
+new file mode 100644
+index 0000000000..2fd9f95700
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/README
+@@ -0,0 +1 @@
++TBD
+\ No newline at end of file
+diff --git a/board/rivieh/imx8mn-550p2-rev2/ddr3l_timing.c b/board/rivieh/imx8mn-550p2-rev2/ddr3l_timing.c
+new file mode 100644
+index 0000000000..14d18cb491
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/ddr3l_timing.c
+@@ -0,0 +1,944 @@
++/*
++ * Copyright 2019 NXP
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ *
++ * Generated code from MX8M_DDR_tool
++ *
++ * Align with uboot version:
++ * imx_v2018.03_4.14.78_1.0.0_ga ~ imx_v2018.04_4.19.35_1.1.0_ga
++ * For imx_v2019.04_5.4.x and above version:
++ * please replace #include <asm/arch/imx8m_ddr.h> with #include <asm/arch/ddr.h>
++ */
++
++#include <linux/kernel.h>
++#include <asm/arch/ddr.h>
++
++struct dram_cfg_param ddr_ddrc_cfg[] = {
++	/** Initialize DDRC registers **/
++	{ 0x3d400304, 0x1 },
++	{ 0x3d400030, 0x20 },
++	{ 0x3d400000, 0xa1040001 },
++	{ 0x3d400064, 0x61008c },
++	{ 0x3d4000d0, 0xc00200c5 },
++	{ 0x3d4000d4, 0x1000b },
++	{ 0x3d4000dc, 0x1d700004 },
++	{ 0x3d4000e0, 0x180000 },
++	{ 0x3d4000e4, 0x90000 },
++	{ 0x3d4000f0, 0x0 },
++	{ 0x3d4000f4, 0xee5 },
++	{ 0x3d400100, 0xc101b0e },
++	{ 0x3d400104, 0x30314 },
++	{ 0x3d400108, 0x4060509 },
++	{ 0x3d40010c, 0x2006 },
++	{ 0x3d400110, 0x6020306 },
++	{ 0x3d400114, 0x4040302 },
++	{ 0x3d400120, 0x909 },
++	{ 0x3d400180, 0x40800020 },
++	{ 0x3d400184, 0xc350 },
++	{ 0x3d400190, 0x3868203 },
++	{ 0x3d400194, 0x20303 },
++	{ 0x3d4001b4, 0x603 },
++	{ 0x3d400198, 0x7000000 },
++	{ 0x3d4001b0, 0x11 },
++	{ 0x3d4001a0, 0x400018 },
++	{ 0x3d4001a4, 0x5003c },
++	{ 0x3d4001a8, 0x80000000 },
++	{ 0x3d4001c4, 0x0 },
++	{ 0x3d400200, 0x1f },
++	{ 0x3d400204, 0x80808 },
++	{ 0x3d400208, 0x0 },
++	{ 0x3d40020c, 0x0 },
++	{ 0x3d400210, 0x1f1f },
++	{ 0x3d400214, 0x7070707 },
++	{ 0x3d400218, 0x7070707 },
++	{ 0x3d400240, 0x600060c },
++	{ 0x3d400244, 0x1323 },
++	{ 0x3d400400, 0x100 },
++	{ 0x3d400250, 0x7ab50b07 },
++	{ 0x3d400254, 0x22 },
++	{ 0x3d40025c, 0x7b00665e },
++	{ 0x3d400264, 0xb0000040 },
++	{ 0x3d40026c, 0x50000a0c },
++	{ 0x3d400300, 0x17 },
++	{ 0x3d40036c, 0x10000 },
++	{ 0x3d400404, 0x3051 },
++	{ 0x3d400408, 0x61d2 },
++	{ 0x3d400494, 0xe00 },
++	{ 0x3d400498, 0x7ff },
++	{ 0x3d40049c, 0xe00 },
++	{ 0x3d4004a0, 0x7ff },
++	{ 0x3d402064, 0x28003b },
++	{ 0x3d4020dc, 0x12200004 },
++	{ 0x3d4020e0, 0x0 },
++	{ 0x3d402100, 0x7090b07 },
++	{ 0x3d402104, 0x20209 },
++	{ 0x3d402108, 0x3030407 },
++	{ 0x3d40210c, 0x2006 },
++	{ 0x3d402110, 0x3020203 },
++	{ 0x3d402114, 0x3030202 },
++	{ 0x3d402120, 0x909 },
++	{ 0x3d402180, 0x40800020 },
++	{ 0x3d402190, 0x3818200 },
++	{ 0x3d402194, 0x20303 },
++	{ 0x3d4021b4, 0x100 },
++	{ 0x3d402240, 0x6000604 },
++	{ 0x3d4020f4, 0xee5 },
++	{ 0x3d400028, 0x1 },
++};
++
++/* PHY Initialize Configuration */
++struct dram_cfg_param ddr_ddrphy_cfg[] = {
++	{ 0x1005f, 0x3ff },
++	{ 0x1015f, 0x3ff },
++	{ 0x1105f, 0x3ff },
++	{ 0x1115f, 0x3ff },
++	{ 0x11005f, 0x3ff },
++	{ 0x11015f, 0x3ff },
++	{ 0x11105f, 0x3ff },
++	{ 0x11115f, 0x3ff },
++	{ 0x55, 0x3ff },
++	{ 0x1055, 0x3ff },
++	{ 0x2055, 0x3ff },
++	{ 0x3055, 0x3ff },
++	{ 0x4055, 0xff },
++	{ 0x5055, 0xff },
++	{ 0x6055, 0x3ff },
++	{ 0x7055, 0x3ff },
++	{ 0x8055, 0x3ff },
++	{ 0x9055, 0x3ff },
++	{ 0x200c5, 0xb },
++	{ 0x1200c5, 0x7 },
++	{ 0x2002e, 0x1 },
++	{ 0x12002e, 0x1 },
++	{ 0x20024, 0x0 },
++	{ 0x2003a, 0x0 },
++	{ 0x120024, 0x0 },
++	{ 0x2003a, 0x0 },
++	{ 0x20056, 0xa },
++	{ 0x120056, 0xa },
++	{ 0x1004d, 0x208 },
++	{ 0x1014d, 0x208 },
++	{ 0x1104d, 0x208 },
++	{ 0x1114d, 0x208 },
++	{ 0x11004d, 0x208 },
++	{ 0x11014d, 0x208 },
++	{ 0x11104d, 0x208 },
++	{ 0x11114d, 0x208 },
++	{ 0x10049, 0xe38 },
++	{ 0x10149, 0xe38 },
++	{ 0x11049, 0xe38 },
++	{ 0x11149, 0xe38 },
++	{ 0x110049, 0xe38 },
++	{ 0x110149, 0xe38 },
++	{ 0x111049, 0xe38 },
++	{ 0x111149, 0xe38 },
++	{ 0x43, 0x63 },
++	{ 0x1043, 0x63 },
++	{ 0x2043, 0x63 },
++	{ 0x3043, 0x63 },
++	{ 0x4043, 0x63 },
++	{ 0x5043, 0x63 },
++	{ 0x6043, 0x63 },
++	{ 0x7043, 0x63 },
++	{ 0x8043, 0x63 },
++	{ 0x9043, 0x63 },
++	{ 0x20018, 0x1 },
++	{ 0x20075, 0x0 },
++	{ 0x20050, 0x0 },
++	{ 0x20008, 0x190 },
++	{ 0x120008, 0xa7 },
++	{ 0x20088, 0x9 },
++	{ 0x200b2, 0x32c },
++	{ 0x10043, 0x581 },
++	{ 0x10143, 0x581 },
++	{ 0x11043, 0x581 },
++	{ 0x11143, 0x581 },
++	{ 0x1200b2, 0x32c },
++	{ 0x110043, 0x581 },
++	{ 0x110143, 0x581 },
++	{ 0x111043, 0x581 },
++	{ 0x111143, 0x581 },
++	{ 0x200fa, 0x1 },
++	{ 0x1200fa, 0x1 },
++	{ 0x20019, 0x5 },
++	{ 0x120019, 0x5 },
++	{ 0x200f0, 0x5555 },
++	{ 0x200f1, 0x5555 },
++	{ 0x200f2, 0x5555 },
++	{ 0x200f3, 0x5555 },
++	{ 0x200f4, 0x5555 },
++	{ 0x200f5, 0x5555 },
++	{ 0x200f6, 0x5555 },
++	{ 0x200f7, 0xf000 },
++	{ 0x20025, 0x0 },
++	{ 0x2007d, 0x212 },
++	{ 0x12007d, 0x212 },
++	{ 0x2007c, 0x61 },
++	{ 0x12007c, 0x61 },
++	{ 0x1004a, 0x500 },
++	{ 0x1104a, 0x500 },
++	{ 0x2002c, 0x0 },
++};
++
++/* ddr phy trained csr */
++struct dram_cfg_param ddr_ddrphy_trained_csr[] = {
++	{0x0200b2,0x0},
++	{0x1200b2,0x0},
++	{0x2200b2,0x0},
++	{0x0200cb,0x0},
++	{0x010043,0x0},
++	{0x110043,0x0},
++	{0x210043,0x0},
++	{0x010143,0x0},
++	{0x110143,0x0},
++	{0x210143,0x0},
++	{0x011043,0x0},
++	{0x111043,0x0},
++	{0x211043,0x0},
++	{0x011143,0x0},
++	{0x111143,0x0},
++	{0x211143,0x0},
++	{0x000080,0x0},
++	{0x100080,0x0},
++	{0x200080,0x0},
++	{0x001080,0x0},
++	{0x101080,0x0},
++	{0x201080,0x0},
++	{0x002080,0x0},
++	{0x102080,0x0},
++	{0x202080,0x0},
++	{0x003080,0x0},
++	{0x103080,0x0},
++	{0x203080,0x0},
++	{0x004080,0x0},
++	{0x104080,0x0},
++	{0x204080,0x0},
++	{0x005080,0x0},
++	{0x105080,0x0},
++	{0x205080,0x0},
++	{0x006080,0x0},
++	{0x106080,0x0},
++	{0x206080,0x0},
++	{0x007080,0x0},
++	{0x107080,0x0},
++	{0x207080,0x0},
++	{0x008080,0x0},
++	{0x108080,0x0},
++	{0x208080,0x0},
++	{0x009080,0x0},
++	{0x109080,0x0},
++	{0x209080,0x0},
++	{0x010080,0x0},
++	{0x110080,0x0},
++	{0x210080,0x0},
++	{0x010180,0x0},
++	{0x110180,0x0},
++	{0x210180,0x0},
++	{0x010081,0x0},
++	{0x110081,0x0},
++	{0x210081,0x0},
++	{0x010181,0x0},
++	{0x110181,0x0},
++	{0x210181,0x0},
++	{0x010082,0x0},
++	{0x110082,0x0},
++	{0x210082,0x0},
++	{0x010182,0x0},
++	{0x110182,0x0},
++	{0x210182,0x0},
++	{0x010083,0x0},
++	{0x110083,0x0},
++	{0x210083,0x0},
++	{0x010183,0x0},
++	{0x110183,0x0},
++	{0x210183,0x0},
++	{0x011080,0x0},
++	{0x111080,0x0},
++	{0x211080,0x0},
++	{0x011180,0x0},
++	{0x111180,0x0},
++	{0x211180,0x0},
++	{0x011081,0x0},
++	{0x111081,0x0},
++	{0x211081,0x0},
++	{0x011181,0x0},
++	{0x111181,0x0},
++	{0x211181,0x0},
++	{0x011082,0x0},
++	{0x111082,0x0},
++	{0x211082,0x0},
++	{0x011182,0x0},
++	{0x111182,0x0},
++	{0x211182,0x0},
++	{0x011083,0x0},
++	{0x111083,0x0},
++	{0x211083,0x0},
++	{0x011183,0x0},
++	{0x111183,0x0},
++	{0x211183,0x0},
++	{0x0100d0,0x0},
++	{0x1100d0,0x0},
++	{0x2100d0,0x0},
++	{0x0101d0,0x0},
++	{0x1101d0,0x0},
++	{0x2101d0,0x0},
++	{0x0100d1,0x0},
++	{0x1100d1,0x0},
++	{0x2100d1,0x0},
++	{0x0101d1,0x0},
++	{0x1101d1,0x0},
++	{0x2101d1,0x0},
++	{0x0100d2,0x0},
++	{0x1100d2,0x0},
++	{0x2100d2,0x0},
++	{0x0101d2,0x0},
++	{0x1101d2,0x0},
++	{0x2101d2,0x0},
++	{0x0100d3,0x0},
++	{0x1100d3,0x0},
++	{0x2100d3,0x0},
++	{0x0101d3,0x0},
++	{0x1101d3,0x0},
++	{0x2101d3,0x0},
++	{0x0110d0,0x0},
++	{0x1110d0,0x0},
++	{0x2110d0,0x0},
++	{0x0111d0,0x0},
++	{0x1111d0,0x0},
++	{0x2111d0,0x0},
++	{0x0110d1,0x0},
++	{0x1110d1,0x0},
++	{0x2110d1,0x0},
++	{0x0111d1,0x0},
++	{0x1111d1,0x0},
++	{0x2111d1,0x0},
++	{0x0110d2,0x0},
++	{0x1110d2,0x0},
++	{0x2110d2,0x0},
++	{0x0111d2,0x0},
++	{0x1111d2,0x0},
++	{0x2111d2,0x0},
++	{0x0110d3,0x0},
++	{0x1110d3,0x0},
++	{0x2110d3,0x0},
++	{0x0111d3,0x0},
++	{0x1111d3,0x0},
++	{0x2111d3,0x0},
++	{0x010068,0x0},
++	{0x010168,0x0},
++	{0x010268,0x0},
++	{0x010368,0x0},
++	{0x010468,0x0},
++	{0x010568,0x0},
++	{0x010668,0x0},
++	{0x010768,0x0},
++	{0x010868,0x0},
++	{0x010069,0x0},
++	{0x010169,0x0},
++	{0x010269,0x0},
++	{0x010369,0x0},
++	{0x010469,0x0},
++	{0x010569,0x0},
++	{0x010669,0x0},
++	{0x010769,0x0},
++	{0x010869,0x0},
++	{0x01006a,0x0},
++	{0x01016a,0x0},
++	{0x01026a,0x0},
++	{0x01036a,0x0},
++	{0x01046a,0x0},
++	{0x01056a,0x0},
++	{0x01066a,0x0},
++	{0x01076a,0x0},
++	{0x01086a,0x0},
++	{0x01006b,0x0},
++	{0x01016b,0x0},
++	{0x01026b,0x0},
++	{0x01036b,0x0},
++	{0x01046b,0x0},
++	{0x01056b,0x0},
++	{0x01066b,0x0},
++	{0x01076b,0x0},
++	{0x01086b,0x0},
++	{0x011068,0x0},
++	{0x011168,0x0},
++	{0x011268,0x0},
++	{0x011368,0x0},
++	{0x011468,0x0},
++	{0x011568,0x0},
++	{0x011668,0x0},
++	{0x011768,0x0},
++	{0x011868,0x0},
++	{0x011069,0x0},
++	{0x011169,0x0},
++	{0x011269,0x0},
++	{0x011369,0x0},
++	{0x011469,0x0},
++	{0x011569,0x0},
++	{0x011669,0x0},
++	{0x011769,0x0},
++	{0x011869,0x0},
++	{0x01106a,0x0},
++	{0x01116a,0x0},
++	{0x01126a,0x0},
++	{0x01136a,0x0},
++	{0x01146a,0x0},
++	{0x01156a,0x0},
++	{0x01166a,0x0},
++	{0x01176a,0x0},
++	{0x01186a,0x0},
++	{0x01106b,0x0},
++	{0x01116b,0x0},
++	{0x01126b,0x0},
++	{0x01136b,0x0},
++	{0x01146b,0x0},
++	{0x01156b,0x0},
++	{0x01166b,0x0},
++	{0x01176b,0x0},
++	{0x01186b,0x0},
++	{0x01008c,0x0},
++	{0x11008c,0x0},
++	{0x21008c,0x0},
++	{0x01018c,0x0},
++	{0x11018c,0x0},
++	{0x21018c,0x0},
++	{0x01008d,0x0},
++	{0x11008d,0x0},
++	{0x21008d,0x0},
++	{0x01018d,0x0},
++	{0x11018d,0x0},
++	{0x21018d,0x0},
++	{0x01008e,0x0},
++	{0x11008e,0x0},
++	{0x21008e,0x0},
++	{0x01018e,0x0},
++	{0x11018e,0x0},
++	{0x21018e,0x0},
++	{0x01008f,0x0},
++	{0x11008f,0x0},
++	{0x21008f,0x0},
++	{0x01018f,0x0},
++	{0x11018f,0x0},
++	{0x21018f,0x0},
++	{0x01108c,0x0},
++	{0x11108c,0x0},
++	{0x21108c,0x0},
++	{0x01118c,0x0},
++	{0x11118c,0x0},
++	{0x21118c,0x0},
++	{0x01108d,0x0},
++	{0x11108d,0x0},
++	{0x21108d,0x0},
++	{0x01118d,0x0},
++	{0x11118d,0x0},
++	{0x21118d,0x0},
++	{0x01108e,0x0},
++	{0x11108e,0x0},
++	{0x21108e,0x0},
++	{0x01118e,0x0},
++	{0x11118e,0x0},
++	{0x21118e,0x0},
++	{0x01108f,0x0},
++	{0x11108f,0x0},
++	{0x21108f,0x0},
++	{0x01118f,0x0},
++	{0x11118f,0x0},
++	{0x21118f,0x0},
++	{0x0100c0,0x0},
++	{0x1100c0,0x0},
++	{0x2100c0,0x0},
++	{0x0101c0,0x0},
++	{0x1101c0,0x0},
++	{0x2101c0,0x0},
++	{0x0102c0,0x0},
++	{0x1102c0,0x0},
++	{0x2102c0,0x0},
++	{0x0103c0,0x0},
++	{0x1103c0,0x0},
++	{0x2103c0,0x0},
++	{0x0104c0,0x0},
++	{0x1104c0,0x0},
++	{0x2104c0,0x0},
++	{0x0105c0,0x0},
++	{0x1105c0,0x0},
++	{0x2105c0,0x0},
++	{0x0106c0,0x0},
++	{0x1106c0,0x0},
++	{0x2106c0,0x0},
++	{0x0107c0,0x0},
++	{0x1107c0,0x0},
++	{0x2107c0,0x0},
++	{0x0108c0,0x0},
++	{0x1108c0,0x0},
++	{0x2108c0,0x0},
++	{0x0100c1,0x0},
++	{0x1100c1,0x0},
++	{0x2100c1,0x0},
++	{0x0101c1,0x0},
++	{0x1101c1,0x0},
++	{0x2101c1,0x0},
++	{0x0102c1,0x0},
++	{0x1102c1,0x0},
++	{0x2102c1,0x0},
++	{0x0103c1,0x0},
++	{0x1103c1,0x0},
++	{0x2103c1,0x0},
++	{0x0104c1,0x0},
++	{0x1104c1,0x0},
++	{0x2104c1,0x0},
++	{0x0105c1,0x0},
++	{0x1105c1,0x0},
++	{0x2105c1,0x0},
++	{0x0106c1,0x0},
++	{0x1106c1,0x0},
++	{0x2106c1,0x0},
++	{0x0107c1,0x0},
++	{0x1107c1,0x0},
++	{0x2107c1,0x0},
++	{0x0108c1,0x0},
++	{0x1108c1,0x0},
++	{0x2108c1,0x0},
++	{0x0100c2,0x0},
++	{0x1100c2,0x0},
++	{0x2100c2,0x0},
++	{0x0101c2,0x0},
++	{0x1101c2,0x0},
++	{0x2101c2,0x0},
++	{0x0102c2,0x0},
++	{0x1102c2,0x0},
++	{0x2102c2,0x0},
++	{0x0103c2,0x0},
++	{0x1103c2,0x0},
++	{0x2103c2,0x0},
++	{0x0104c2,0x0},
++	{0x1104c2,0x0},
++	{0x2104c2,0x0},
++	{0x0105c2,0x0},
++	{0x1105c2,0x0},
++	{0x2105c2,0x0},
++	{0x0106c2,0x0},
++	{0x1106c2,0x0},
++	{0x2106c2,0x0},
++	{0x0107c2,0x0},
++	{0x1107c2,0x0},
++	{0x2107c2,0x0},
++	{0x0108c2,0x0},
++	{0x1108c2,0x0},
++	{0x2108c2,0x0},
++	{0x0100c3,0x0},
++	{0x1100c3,0x0},
++	{0x2100c3,0x0},
++	{0x0101c3,0x0},
++	{0x1101c3,0x0},
++	{0x2101c3,0x0},
++	{0x0102c3,0x0},
++	{0x1102c3,0x0},
++	{0x2102c3,0x0},
++	{0x0103c3,0x0},
++	{0x1103c3,0x0},
++	{0x2103c3,0x0},
++	{0x0104c3,0x0},
++	{0x1104c3,0x0},
++	{0x2104c3,0x0},
++	{0x0105c3,0x0},
++	{0x1105c3,0x0},
++	{0x2105c3,0x0},
++	{0x0106c3,0x0},
++	{0x1106c3,0x0},
++	{0x2106c3,0x0},
++	{0x0107c3,0x0},
++	{0x1107c3,0x0},
++	{0x2107c3,0x0},
++	{0x0108c3,0x0},
++	{0x1108c3,0x0},
++	{0x2108c3,0x0},
++	{0x0110c0,0x0},
++	{0x1110c0,0x0},
++	{0x2110c0,0x0},
++	{0x0111c0,0x0},
++	{0x1111c0,0x0},
++	{0x2111c0,0x0},
++	{0x0112c0,0x0},
++	{0x1112c0,0x0},
++	{0x2112c0,0x0},
++	{0x0113c0,0x0},
++	{0x1113c0,0x0},
++	{0x2113c0,0x0},
++	{0x0114c0,0x0},
++	{0x1114c0,0x0},
++	{0x2114c0,0x0},
++	{0x0115c0,0x0},
++	{0x1115c0,0x0},
++	{0x2115c0,0x0},
++	{0x0116c0,0x0},
++	{0x1116c0,0x0},
++	{0x2116c0,0x0},
++	{0x0117c0,0x0},
++	{0x1117c0,0x0},
++	{0x2117c0,0x0},
++	{0x0118c0,0x0},
++	{0x1118c0,0x0},
++	{0x2118c0,0x0},
++	{0x0110c1,0x0},
++	{0x1110c1,0x0},
++	{0x2110c1,0x0},
++	{0x0111c1,0x0},
++	{0x1111c1,0x0},
++	{0x2111c1,0x0},
++	{0x0112c1,0x0},
++	{0x1112c1,0x0},
++	{0x2112c1,0x0},
++	{0x0113c1,0x0},
++	{0x1113c1,0x0},
++	{0x2113c1,0x0},
++	{0x0114c1,0x0},
++	{0x1114c1,0x0},
++	{0x2114c1,0x0},
++	{0x0115c1,0x0},
++	{0x1115c1,0x0},
++	{0x2115c1,0x0},
++	{0x0116c1,0x0},
++	{0x1116c1,0x0},
++	{0x2116c1,0x0},
++	{0x0117c1,0x0},
++	{0x1117c1,0x0},
++	{0x2117c1,0x0},
++	{0x0118c1,0x0},
++	{0x1118c1,0x0},
++	{0x2118c1,0x0},
++	{0x0110c2,0x0},
++	{0x1110c2,0x0},
++	{0x2110c2,0x0},
++	{0x0111c2,0x0},
++	{0x1111c2,0x0},
++	{0x2111c2,0x0},
++	{0x0112c2,0x0},
++	{0x1112c2,0x0},
++	{0x2112c2,0x0},
++	{0x0113c2,0x0},
++	{0x1113c2,0x0},
++	{0x2113c2,0x0},
++	{0x0114c2,0x0},
++	{0x1114c2,0x0},
++	{0x2114c2,0x0},
++	{0x0115c2,0x0},
++	{0x1115c2,0x0},
++	{0x2115c2,0x0},
++	{0x0116c2,0x0},
++	{0x1116c2,0x0},
++	{0x2116c2,0x0},
++	{0x0117c2,0x0},
++	{0x1117c2,0x0},
++	{0x2117c2,0x0},
++	{0x0118c2,0x0},
++	{0x1118c2,0x0},
++	{0x2118c2,0x0},
++	{0x0110c3,0x0},
++	{0x1110c3,0x0},
++	{0x2110c3,0x0},
++	{0x0111c3,0x0},
++	{0x1111c3,0x0},
++	{0x2111c3,0x0},
++	{0x0112c3,0x0},
++	{0x1112c3,0x0},
++	{0x2112c3,0x0},
++	{0x0113c3,0x0},
++	{0x1113c3,0x0},
++	{0x2113c3,0x0},
++	{0x0114c3,0x0},
++	{0x1114c3,0x0},
++	{0x2114c3,0x0},
++	{0x0115c3,0x0},
++	{0x1115c3,0x0},
++	{0x2115c3,0x0},
++	{0x0116c3,0x0},
++	{0x1116c3,0x0},
++	{0x2116c3,0x0},
++	{0x0117c3,0x0},
++	{0x1117c3,0x0},
++	{0x2117c3,0x0},
++	{0x0118c3,0x0},
++	{0x1118c3,0x0},
++	{0x2118c3,0x0},
++	{0x010020,0x0},
++	{0x110020,0x0},
++	{0x210020,0x0},
++	{0x011020,0x0},
++	{0x111020,0x0},
++	{0x211020,0x0},
++	{0x02007d,0x0},
++	{0x12007d,0x0},
++	{0x22007d,0x0},
++};
++
++/* P0 message block paremeter for training firmware */
++struct dram_cfg_param ddr_fsp0_cfg[] = {
++	{ 0xd0000, 0x0 },
++	{ 0x54003, 0x640 },
++	{ 0x54004, 0x2 },
++	{ 0x54005, 0x283c },
++	{ 0x54006, 0x140 },
++	{ 0x54007, 0x1000 },
++	{ 0x54008, 0x101 },
++	{ 0x5400b, 0x31f },
++	{ 0x5400c, 0xc8 },
++	{ 0x54012, 0x1 },
++	{ 0x5402f, 0x1d70 },
++	{ 0x54030, 0x4 },
++	{ 0x54031, 0x18 },
++	{ 0x5403a, 0x1323 },
++	{ 0xd0000, 0x1 },
++};
++
++
++/* P1 message block paremeter for training firmware */
++struct dram_cfg_param ddr_fsp1_cfg[] = {
++	{ 0xd0000, 0x0 },
++	{ 0x54002, 0x1 },
++	{ 0x54003, 0x29c },
++	{ 0x54004, 0x2 },
++	{ 0x54005, 0x283c },
++	{ 0x54006, 0x140 },
++	{ 0x54007, 0x1000 },
++	{ 0x54008, 0x101 },
++	{ 0x5400b, 0x21f },
++	{ 0x5400c, 0xc8 },
++	{ 0x54012, 0x1 },
++	{ 0x5402f, 0x1220 },
++	{ 0x54030, 0x4 },
++	{ 0x5403a, 0x1323 },
++	{ 0xd0000, 0x1 },
++};
++
++/* DRAM PHY init engine image */
++struct dram_cfg_param ddr_phy_pie[] = {
++	{ 0xd0000, 0x0 },
++	{ 0x90000, 0x10 },
++	{ 0x90001, 0x400 },
++	{ 0x90002, 0x10e },
++	{ 0x90003, 0x0 },
++	{ 0x90004, 0x0 },
++	{ 0x90005, 0x8 },
++	{ 0x90029, 0xb },
++	{ 0x9002a, 0x480 },
++	{ 0x9002b, 0x109 },
++	{ 0x9002c, 0x8 },
++	{ 0x9002d, 0x448 },
++	{ 0x9002e, 0x139 },
++	{ 0x9002f, 0x8 },
++	{ 0x90030, 0x478 },
++	{ 0x90031, 0x109 },
++	{ 0x90032, 0x2 },
++	{ 0x90033, 0x10 },
++	{ 0x90034, 0x139 },
++	{ 0x90035, 0xb },
++	{ 0x90036, 0x7c0 },
++	{ 0x90037, 0x139 },
++	{ 0x90038, 0x44 },
++	{ 0x90039, 0x633 },
++	{ 0x9003a, 0x159 },
++	{ 0x9003b, 0x14f },
++	{ 0x9003c, 0x630 },
++	{ 0x9003d, 0x159 },
++	{ 0x9003e, 0x47 },
++	{ 0x9003f, 0x633 },
++	{ 0x90040, 0x149 },
++	{ 0x90041, 0x4f },
++	{ 0x90042, 0x633 },
++	{ 0x90043, 0x179 },
++	{ 0x90044, 0x8 },
++	{ 0x90045, 0xe0 },
++	{ 0x90046, 0x109 },
++	{ 0x90047, 0x0 },
++	{ 0x90048, 0x7c8 },
++	{ 0x90049, 0x109 },
++	{ 0x9004a, 0x0 },
++	{ 0x9004b, 0x1 },
++	{ 0x9004c, 0x8 },
++	{ 0x9004d, 0x0 },
++	{ 0x9004e, 0x45a },
++	{ 0x9004f, 0x9 },
++	{ 0x90050, 0x0 },
++	{ 0x90051, 0x448 },
++	{ 0x90052, 0x109 },
++	{ 0x90053, 0x40 },
++	{ 0x90054, 0x633 },
++	{ 0x90055, 0x179 },
++	{ 0x90056, 0x1 },
++	{ 0x90057, 0x618 },
++	{ 0x90058, 0x109 },
++	{ 0x90059, 0x40c0 },
++	{ 0x9005a, 0x633 },
++	{ 0x9005b, 0x149 },
++	{ 0x9005c, 0x8 },
++	{ 0x9005d, 0x4 },
++	{ 0x9005e, 0x48 },
++	{ 0x9005f, 0x4040 },
++	{ 0x90060, 0x633 },
++	{ 0x90061, 0x149 },
++	{ 0x90062, 0x0 },
++	{ 0x90063, 0x4 },
++	{ 0x90064, 0x48 },
++	{ 0x90065, 0x40 },
++	{ 0x90066, 0x633 },
++	{ 0x90067, 0x149 },
++	{ 0x90068, 0x10 },
++	{ 0x90069, 0x4 },
++	{ 0x9006a, 0x18 },
++	{ 0x9006b, 0x0 },
++	{ 0x9006c, 0x4 },
++	{ 0x9006d, 0x78 },
++	{ 0x9006e, 0x549 },
++	{ 0x9006f, 0x633 },
++	{ 0x90070, 0x159 },
++	{ 0x90071, 0xd49 },
++	{ 0x90072, 0x633 },
++	{ 0x90073, 0x159 },
++	{ 0x90074, 0x94a },
++	{ 0x90075, 0x633 },
++	{ 0x90076, 0x159 },
++	{ 0x90077, 0x441 },
++	{ 0x90078, 0x633 },
++	{ 0x90079, 0x149 },
++	{ 0x9007a, 0x42 },
++	{ 0x9007b, 0x633 },
++	{ 0x9007c, 0x149 },
++	{ 0x9007d, 0x1 },
++	{ 0x9007e, 0x633 },
++	{ 0x9007f, 0x149 },
++	{ 0x90080, 0x0 },
++	{ 0x90081, 0xe0 },
++	{ 0x90082, 0x109 },
++	{ 0x90083, 0xa },
++	{ 0x90084, 0x10 },
++	{ 0x90085, 0x109 },
++	{ 0x90086, 0x9 },
++	{ 0x90087, 0x3c0 },
++	{ 0x90088, 0x149 },
++	{ 0x90089, 0x9 },
++	{ 0x9008a, 0x3c0 },
++	{ 0x9008b, 0x159 },
++	{ 0x9008c, 0x18 },
++	{ 0x9008d, 0x10 },
++	{ 0x9008e, 0x109 },
++	{ 0x9008f, 0x0 },
++	{ 0x90090, 0x3c0 },
++	{ 0x90091, 0x109 },
++	{ 0x90092, 0x18 },
++	{ 0x90093, 0x4 },
++	{ 0x90094, 0x48 },
++	{ 0x90095, 0x18 },
++	{ 0x90096, 0x4 },
++	{ 0x90097, 0x58 },
++	{ 0x90098, 0xb },
++	{ 0x90099, 0x10 },
++	{ 0x9009a, 0x109 },
++	{ 0x9009b, 0x1 },
++	{ 0x9009c, 0x10 },
++	{ 0x9009d, 0x109 },
++	{ 0x9009e, 0x5 },
++	{ 0x9009f, 0x7c0 },
++	{ 0x900a0, 0x109 },
++	{ 0x900a1, 0x0 },
++	{ 0x900a2, 0x8140 },
++	{ 0x900a3, 0x10c },
++	{ 0x900a4, 0x10 },
++	{ 0x900a5, 0x8138 },
++	{ 0x900a6, 0x10c },
++	{ 0x900a7, 0x8 },
++	{ 0x900a8, 0x7c8 },
++	{ 0x900a9, 0x101 },
++	{ 0x900aa, 0x8 },
++	{ 0x900ab, 0x448 },
++	{ 0x900ac, 0x109 },
++	{ 0x900ad, 0xf },
++	{ 0x900ae, 0x7c0 },
++	{ 0x900af, 0x109 },
++	{ 0x900b0, 0x47 },
++	{ 0x900b1, 0x630 },
++	{ 0x900b2, 0x109 },
++	{ 0x900b3, 0x8 },
++	{ 0x900b4, 0x618 },
++	{ 0x900b5, 0x109 },
++	{ 0x900b6, 0x8 },
++	{ 0x900b7, 0xe0 },
++	{ 0x900b8, 0x109 },
++	{ 0x900b9, 0x0 },
++	{ 0x900ba, 0x7c8 },
++	{ 0x900bb, 0x109 },
++	{ 0x900bc, 0x8 },
++	{ 0x900bd, 0x8140 },
++	{ 0x900be, 0x10c },
++	{ 0x900bf, 0x0 },
++	{ 0x900c0, 0x1 },
++	{ 0x900c1, 0x8 },
++	{ 0x900c2, 0x8 },
++	{ 0x900c3, 0x4 },
++	{ 0x900c4, 0x8 },
++	{ 0x900c5, 0x8 },
++	{ 0x900c6, 0x7c8 },
++	{ 0x900c7, 0x101 },
++	{ 0x90006, 0x0 },
++	{ 0x90007, 0x0 },
++	{ 0x90008, 0x8 },
++	{ 0x90009, 0x0 },
++	{ 0x9000a, 0x0 },
++	{ 0x9000b, 0x0 },
++	{ 0xd00e7, 0x400 },
++	{ 0x90017, 0x0 },
++	{ 0x90026, 0x2b },
++	{ 0x2000b, 0x32 },
++	{ 0x2000c, 0x64 },
++	{ 0x2000d, 0x3e8 },
++	{ 0x2000e, 0x2c },
++	{ 0x12000b, 0x14 },
++	{ 0x12000c, 0x26 },
++	{ 0x12000d, 0x1a1 },
++	{ 0x12000e, 0x10 },
++	{ 0x9000c, 0x0 },
++	{ 0x9000d, 0x173 },
++	{ 0x9000e, 0x60 },
++	{ 0x9000f, 0x6110 },
++	{ 0x90010, 0x2152 },
++	{ 0x90011, 0xdfbd },
++	{ 0x90012, 0xffff },
++	{ 0x90013, 0x6152 },
++	{ 0x20089, 0x1 },
++	{ 0x20088, 0x19 },
++	{ 0xc0080, 0x0 },
++	{ 0xd0000, 0x1 }
++};
++
++struct dram_fsp_msg ddr_dram_fsp_msg[] = {
++	{
++		/* P0 1600mts 1D */
++		.drate = 1600,
++		.fw_type = FW_1D_IMAGE,
++		.fsp_cfg = ddr_fsp0_cfg,
++		.fsp_cfg_num = ARRAY_SIZE(ddr_fsp0_cfg),
++	},
++	{
++		/* P1 667mts 1D */
++		.drate = 667,
++		.fw_type = FW_1D_IMAGE,
++		.fsp_cfg = ddr_fsp1_cfg,
++		.fsp_cfg_num = ARRAY_SIZE(ddr_fsp1_cfg),
++	},
++};
++
++/* ddr timing config params */
++struct dram_timing_info dram_timing = {
++	.ddrc_cfg = ddr_ddrc_cfg,
++	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
++	.ddrphy_cfg = ddr_ddrphy_cfg,
++	.ddrphy_cfg_num = ARRAY_SIZE(ddr_ddrphy_cfg),
++	.fsp_msg = ddr_dram_fsp_msg,
++	.fsp_msg_num = ARRAY_SIZE(ddr_dram_fsp_msg),
++	.ddrphy_trained_csr = ddr_ddrphy_trained_csr,
++	.ddrphy_trained_csr_num = ARRAY_SIZE(ddr_ddrphy_trained_csr),
++	.ddrphy_pie = ddr_phy_pie,
++	.ddrphy_pie_num = ARRAY_SIZE(ddr_phy_pie),
++	.fsp_table = { 1600, 667, },
++};
++
+diff --git a/board/rivieh/imx8mn-550p2-rev2/imx8mn-550p2-rev2.c b/board/rivieh/imx8mn-550p2-rev2/imx8mn-550p2-rev2.c
+new file mode 100644
+index 0000000000..3469d48110
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/imx8mn-550p2-rev2.c
+@@ -0,0 +1,346 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2022 Rivieh
++ */
++
++#include <common.h>
++#include <env.h>
++#include <init.h>
++#include <asm/global_data.h>
++#include <miiphy.h>
++#include <netdev.h>
++#include <asm/mach-imx/iomux-v3.h>
++#include <asm-generic/gpio.h>
++#include <asm/arch/imx8mn_pins.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/mach-imx/gpio.h>
++#include <asm/mach-imx/mxc_i2c.h>
++#include <i2c.h>
++#include <asm/io.h>
++#include "../../freescale/common/tcpc.h"
++#include <usb.h>
++#include <imx_sip.h>
++#include <linux/arm-smccc.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define UART_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_FSEL1)
++#define WDOG_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_ODE | PAD_CTL_PUE | PAD_CTL_PE)
++
++static iomux_v3_cfg_t const uart_pads[] = {
++	IMX8MN_PAD_UART2_RXD__UART2_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
++	IMX8MN_PAD_UART2_TXD__UART2_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
++};
++
++static iomux_v3_cfg_t const wdog_pads[] = {
++	IMX8MN_PAD_GPIO1_IO02__WDOG1_WDOG_B  | MUX_PAD_CTRL(WDOG_PAD_CTRL),
++};
++
++#ifdef CONFIG_NAND_MXS
++#ifdef CONFIG_SPL_BUILD
++#define NAND_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_FSEL2 | PAD_CTL_HYS)
++#define NAND_PAD_READY0_CTRL (PAD_CTL_DSE6 | PAD_CTL_FSEL2 | PAD_CTL_PUE)
++static iomux_v3_cfg_t const gpmi_pads[] = {
++	IMX8MN_PAD_NAND_ALE__RAWNAND_ALE | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_CE0_B__RAWNAND_CE0_B | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_CLE__RAWNAND_CLE | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA00__RAWNAND_DATA00 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA01__RAWNAND_DATA01 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA02__RAWNAND_DATA02 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA03__RAWNAND_DATA03 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA04__RAWNAND_DATA04 | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA05__RAWNAND_DATA05	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA06__RAWNAND_DATA06	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_DATA07__RAWNAND_DATA07	| MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_RE_B__RAWNAND_RE_B | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_READY_B__RAWNAND_READY_B | MUX_PAD_CTRL(NAND_PAD_READY0_CTRL),
++	IMX8MN_PAD_NAND_WE_B__RAWNAND_WE_B | MUX_PAD_CTRL(NAND_PAD_CTRL),
++	IMX8MN_PAD_NAND_WP_B__RAWNAND_WP_B | MUX_PAD_CTRL(NAND_PAD_CTRL),
++};
++#endif
++
++static void setup_gpmi_nand(void)
++{
++#ifdef CONFIG_SPL_BUILD
++	imx_iomux_v3_setup_multiple_pads(gpmi_pads, ARRAY_SIZE(gpmi_pads));
++#endif
++
++	init_nand_clk();
++}
++#endif
++
++int board_early_init_f(void)
++{
++	struct wdog_regs *wdog = (struct wdog_regs *)WDOG1_BASE_ADDR;
++
++	imx_iomux_v3_setup_multiple_pads(wdog_pads, ARRAY_SIZE(wdog_pads));
++
++	set_wdog_reset(wdog);
++
++	imx_iomux_v3_setup_multiple_pads(uart_pads, ARRAY_SIZE(uart_pads));
++
++	init_uart_clk(1);
++
++#ifdef CONFIG_NAND_MXS
++	setup_gpmi_nand(); /* SPL will call the board_early_init_f */
++#endif
++
++	return 0;
++}
++
++#if IS_ENABLED(CONFIG_FEC_MXC)
++static int setup_fec(void)
++{
++	struct iomuxc_gpr_base_regs *gpr =
++		(struct iomuxc_gpr_base_regs *)IOMUXC_GPR_BASE_ADDR;
++
++	/* Use 125M anatop REF_CLK1 for ENET1, not from external */
++	clrsetbits_le32(&gpr->gpr[1], 0x2000, 0);
++
++	return 0;
++}
++
++int board_phy_config(struct phy_device *phydev)
++{
++	if (phydev->drv->config)
++		phydev->drv->config(phydev);
++
++#ifndef CONFIG_DM_ETH
++	/* enable rgmii rxc skew and phy mode select to RGMII copper */
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
++
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x00);
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x82ee);
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
++	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
++#endif
++
++	return 0;
++}
++#endif
++
++#ifdef CONFIG_USB_TCPC
++struct tcpc_port port1;
++struct tcpc_port port2;
++
++static int setup_pd_switch(uint8_t i2c_bus, uint8_t addr)
++{
++	struct udevice *bus;
++	struct udevice *i2c_dev = NULL;
++	int ret;
++	uint8_t valb;
++
++	ret = uclass_get_device_by_seq(UCLASS_I2C, i2c_bus, &bus);
++	if (ret) {
++		printf("%s: Can't find bus\n", __func__);
++		return -EINVAL;
++	}
++
++	ret = dm_i2c_probe(bus, addr, 0, &i2c_dev);
++	if (ret) {
++		printf("%s: Can't find device id=0x%x\n",
++			__func__, addr);
++		return -ENODEV;
++	}
++
++	ret = dm_i2c_read(i2c_dev, 0xB, &valb, 1);
++	if (ret) {
++		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
++		return -EIO;
++	}
++	valb |= 0x4; /* Set DB_EXIT to exit dead battery mode */
++	ret = dm_i2c_write(i2c_dev, 0xB, (const uint8_t *)&valb, 1);
++	if (ret) {
++		printf("%s dm_i2c_write failed, err %d\n", __func__, ret);
++		return -EIO;
++	}
++
++	/* Set OVP threshold to 23V */
++	valb = 0x6;
++	ret = dm_i2c_write(i2c_dev, 0x8, (const uint8_t *)&valb, 1);
++	if (ret) {
++		printf("%s dm_i2c_write failed, err %d\n", __func__, ret);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++int pd_switch_snk_enable(struct tcpc_port *port)
++{
++	if (port == &port1) {
++		debug("Setup pd switch on port 1\n");
++		return setup_pd_switch(1, 0x72);
++	} else if (port == &port2) {
++		debug("Setup pd switch on port 2\n");
++		return setup_pd_switch(1, 0x73);
++	} else
++		return -EINVAL;
++}
++
++struct tcpc_port_config port1_config = {
++	.i2c_bus = 1, /*i2c2*/
++	.addr = 0x50,
++	.port_type = TYPEC_PORT_UFP,
++	.max_snk_mv = 5000,
++	.max_snk_ma = 3000,
++	.max_snk_mw = 40000,
++	.op_snk_mv = 9000,
++	.switch_setup_func = &pd_switch_snk_enable,
++};
++
++struct tcpc_port_config port2_config = {
++	.i2c_bus = 1, /*i2c2*/
++	.addr = 0x52,
++	.port_type = TYPEC_PORT_UFP,
++	.max_snk_mv = 9000,
++	.max_snk_ma = 3000,
++	.max_snk_mw = 40000,
++	.op_snk_mv = 9000,
++	.switch_setup_func = &pd_switch_snk_enable,
++};
++
++static int setup_typec(void)
++{
++	int ret;
++
++	debug("tcpc_init port 2\n");
++	ret = tcpc_init(&port2, port2_config, NULL);
++	if (ret) {
++		printf("%s: tcpc port2 init failed, err=%d\n",
++		       __func__, ret);
++	} else if (tcpc_pd_sink_check_charging(&port2)) {
++		/* Disable PD for USB1, since USB2 has priority */
++		port1_config.disable_pd = true;
++		printf("Power supply on USB2\n");
++	}
++
++	debug("tcpc_init port 1\n");
++	ret = tcpc_init(&port1, port1_config, NULL);
++	if (ret) {
++		printf("%s: tcpc port1 init failed, err=%d\n",
++		       __func__, ret);
++	} else {
++		if (!port1_config.disable_pd)
++			printf("Power supply on USB1\n");
++		return ret;
++	}
++
++	return ret;
++}
++
++int board_usb_init(int index, enum usb_init_type init)
++{
++	int ret = 0;
++	struct tcpc_port *port_ptr;
++
++	debug("board_usb_init %d, type %d\n", index, init);
++
++	if (index == 0)
++		port_ptr = &port1;
++	else
++		port_ptr = &port2;
++
++	imx8m_usb_power(index, true);
++
++	if (init == USB_INIT_HOST)
++		tcpc_setup_dfp_mode(port_ptr);
++	else
++		tcpc_setup_ufp_mode(port_ptr);
++
++	return ret;
++}
++
++int board_usb_cleanup(int index, enum usb_init_type init)
++{
++	int ret = 0;
++
++	debug("board_usb_cleanup %d, type %d\n", index, init);
++
++	if (init == USB_INIT_HOST) {
++		if (index == 0)
++			ret = tcpc_disable_src_vbus(&port1);
++		else
++			ret = tcpc_disable_src_vbus(&port2);
++	}
++
++	imx8m_usb_power(index, false);
++	return ret;
++}
++
++int board_ehci_usb_phy_mode(struct udevice *dev)
++{
++	int ret = 0;
++	enum typec_cc_polarity pol;
++	enum typec_cc_state state;
++	struct tcpc_port *port_ptr;
++
++	if (dev_seq(dev) == 0)
++		port_ptr = &port1;
++	else
++		port_ptr = &port2;
++
++	tcpc_setup_ufp_mode(port_ptr);
++
++	ret = tcpc_get_cc_status(port_ptr, &pol, &state);
++	if (!ret) {
++		if (state == TYPEC_STATE_SRC_RD_RA || state == TYPEC_STATE_SRC_RD)
++			return USB_INIT_HOST;
++	}
++
++	return USB_INIT_DEVICE;
++}
++
++#endif
++
++#define DISPMIX				9
++#define MIPI				10
++
++int board_init(void)
++{
++	struct arm_smccc_res res;
++
++#ifdef CONFIG_USB_TCPC
++	setup_typec();
++#endif
++
++	if (IS_ENABLED(CONFIG_FEC_MXC))
++		setup_fec();
++
++	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
++		      DISPMIX, true, 0, 0, 0, 0, &res);
++	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
++		      MIPI, true, 0, 0, 0, 0, &res);
++
++	return 0;
++}
++
++int board_late_init(void)
++{
++#ifdef CONFIG_ENV_IS_IN_MMC
++	board_late_mmc_env_init();
++#endif
++
++#ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
++	env_set("board_name", "DDR4 EVK");
++	env_set("board_rev", "iMX8MN");
++#endif
++	return 0;
++}
++
++#ifdef CONFIG_ANDROID_SUPPORT
++bool is_power_key_pressed(void) {
++	return (bool)(!!(readl(SNVS_HPSR) & (0x1 << 6)));
++}
++#endif
++
++#ifdef CONFIG_FSL_FASTBOOT
++#ifdef CONFIG_ANDROID_RECOVERY
++int is_recovery_key_pressing(void)
++{
++	return 0; /* TODO */
++}
++#endif /* CONFIG_ANDROID_RECOVERY */
++#endif /* CONFIG_FSL_FASTBOOT */
+diff --git a/board/rivieh/imx8mn-550p2-rev2/spl.c b/board/rivieh/imx8mn-550p2-rev2/spl.c
+new file mode 100644
+index 0000000000..8d316336e6
+--- /dev/null
++++ b/board/rivieh/imx8mn-550p2-rev2/spl.c
+@@ -0,0 +1,233 @@
++/*
++ * Copyright 2018-2019 NXP
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <command.h>
++#include <cpu_func.h>
++#include <hang.h>
++#include <image.h>
++#include <init.h>
++#include <log.h>
++#include <spl.h>
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <asm/mach-imx/iomux-v3.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/imx8mn_pins.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/mach-imx/boot_mode.h>
++#include <asm/arch/ddr.h>
++
++#include <power/pmic.h>
++#include <power/bd71837.h>
++#include <power/pca9450.h>
++#include <dm/uclass.h>
++#include <dm/device.h>
++#include <dm/uclass-internal.h>
++#include <dm/device-internal.h>
++#include <asm/mach-imx/gpio.h>
++#include <asm/mach-imx/mxc_i2c.h>
++#include <fsl_esdhc_imx.h>
++#include <mmc.h>
++#include <linux/delay.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++int spl_board_boot_device(enum boot_device boot_dev_spl)
++{
++#ifdef CONFIG_SPL_BOOTROM_SUPPORT
++	return BOOT_DEVICE_BOOTROM;
++#else
++	switch (boot_dev_spl) {
++	case SD1_BOOT:
++	case MMC1_BOOT:
++	case SD2_BOOT:
++	case MMC2_BOOT:
++		return BOOT_DEVICE_MMC1;
++	case SD3_BOOT:
++	case MMC3_BOOT:
++		return BOOT_DEVICE_MMC2;
++	case QSPI_BOOT:
++		return BOOT_DEVICE_NOR;
++	case NAND_BOOT:
++		return BOOT_DEVICE_NAND;
++	case USB_BOOT:
++		return BOOT_DEVICE_BOARD;
++	default:
++		return BOOT_DEVICE_NONE;
++	}
++#endif
++}
++
++void spl_dram_init(void)
++{
++	ddr_init(&dram_timing);
++}
++
++#if CONFIG_IS_ENABLED(DM_PMIC_BD71837)
++int power_init_board(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = pmic_get("pmic@4b", &dev);
++	if (ret == -ENODEV) {
++		puts("No pmic@4b\n");
++		return 0;
++	}
++	if (ret != 0)
++		return ret;
++
++	/* decrease RESET key long push time from the default 10s to 10ms */
++	pmic_reg_write(dev, BD718XX_PWRONCONFIG1, 0x0);
++
++	/* unlock the PMIC regs */
++	pmic_reg_write(dev, BD718XX_REGLOCK, 0x1);
++
++	/* Set VDD_ARM to typical value 0.85v for 1.2Ghz */
++	pmic_reg_write(dev, BD718XX_BUCK2_VOLT_RUN, 0xf);
++
++#ifdef CONFIG_IMX8MN_LOW_DRIVE_MODE
++	/* Set VDD_SOC/VDD_DRAM to typical value 0.8v for low drive mode */
++	pmic_reg_write(dev, BD718XX_BUCK1_VOLT_RUN, 0xa);
++#else
++	/* Set VDD_SOC/VDD_DRAM to typical value 0.85v for nominal mode */
++	pmic_reg_write(dev, BD718XX_BUCK1_VOLT_RUN, 0xf);
++#endif /* CONFIG_IMX8MN_LOW_DRIVE_MODE */
++
++	/* Set VDD_SOC 0.75v for low-v suspend */
++	pmic_reg_write(dev, BD718XX_BUCK1_VOLT_SUSP, 0x5);
++
++	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
++	pmic_reg_write(dev, BD718XX_4TH_NODVS_BUCK_VOLT, 0x28);
++
++	/* lock the PMIC regs */
++	pmic_reg_write(dev, BD718XX_REGLOCK, 0x11);
++
++	return 0;
++}
++#endif
++
++#if CONFIG_IS_ENABLED(DM_PMIC_PCA9450)
++int power_init_board(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = pmic_get("pca9450@25", &dev);
++	if (ret == -ENODEV) {
++		puts("No pca9450@25\n");
++		return 0;
++	}
++	if (ret != 0)
++		return ret;
++
++	/* BUCKxOUT_DVS0/1 control BUCK123 output */
++	pmic_reg_write(dev, PCA9450_BUCK123_DVS, 0x29);
++
++	/* Set VDD_SOC to 0.85v for DDR3L at 1600MTS */
++	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS0, 0x14);
++
++	/* Disable the BUCK2 */
++	pmic_reg_write(dev, PCA9450_BUCK2CTRL, 0x48);
++
++	/* Set NVCC_DRAM to 1.35v */
++	pmic_reg_write(dev, PCA9450_BUCK6OUT, 0x1E);
++
++	/* Set DVS1 to 0.75v for low-v suspend */
++	/* Enable DVS control through PMIC_STBY_REQ and set B1_ENMODE=1 (ON by PMIC_ON_REQ=H) */
++	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS1, 0xC);
++	pmic_reg_write(dev, PCA9450_BUCK1CTRL, 0x59);
++
++	/* set VDD_SNVS_0V8 from default 0.85V */
++	pmic_reg_write(dev, PCA9450_LDO2CTRL, 0xC0);
++
++	/* enable LDO4 to 1.2v */
++	pmic_reg_write(dev, PCA9450_LDO4CTRL, 0x44);
++
++	/* set WDOG_B_CFG to cold reset */
++	pmic_reg_write(dev, PCA9450_RESET_CTRL, 0xA1);
++
++	return 0;
++}
++#endif
++
++void spl_board_init(void)
++{
++	struct udevice *dev;
++	uclass_find_first_device(UCLASS_MISC, &dev);
++
++	for (; dev; uclass_find_next_device(&dev)) {
++		if (device_probe(dev))
++			continue;
++	}
++	puts("Normal Boot\n");
++}
++
++#ifdef CONFIG_SPL_LOAD_FIT
++int board_fit_config_name_match(const char *name)
++{
++	/* Just empty function now - can't decide what to choose */
++	debug("%s: %s\n", __func__, name);
++
++	return 0;
++}
++#endif
++
++void board_init_f(ulong dummy)
++{
++	struct udevice *dev;
++	int ret;
++
++	/* Clear the BSS. */
++	memset(__bss_start, 0, __bss_end - __bss_start);
++
++	arch_cpu_init();
++
++	board_early_init_f();
++
++	timer_init();
++
++	preloader_console_init();
++
++	ret = spl_early_init();
++	if (ret) {
++		debug("spl_early_init() failed: %d\n", ret);
++		hang();
++	}
++
++	ret = uclass_get_device_by_name(UCLASS_CLK,
++					"clock-controller@30380000",
++					&dev);
++	if (ret < 0) {
++		printf("Failed to find clock node. Check device tree\n");
++		hang();
++	}
++
++	enable_tzc380();
++
++	power_init_board();
++
++	/* DDR initialization */
++	spl_dram_init();
++
++	board_init_r(NULL, 0);
++}
++#ifdef CONFIG_SPL_MMC_SUPPORT
++
++#define UBOOT_RAW_SECTOR_OFFSET 0x40
++unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc)
++{
++	u32 boot_dev = spl_boot_device();
++	switch (boot_dev) {
++		case BOOT_DEVICE_MMC1:
++			return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR;
++		case BOOT_DEVICE_MMC2:
++			return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR - UBOOT_RAW_SECTOR_OFFSET;
++	}
++	return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR;
++}
++#endif
+diff --git a/configs/imx8mn-550p2-rev2_defconfig b/configs/imx8mn-550p2-rev2_defconfig
+new file mode 100644
+index 0000000000..a760b60c8f
+--- /dev/null
++++ b/configs/imx8mn-550p2-rev2_defconfig
+@@ -0,0 +1,145 @@
++CONFIG_ARM=y
++CONFIG_ARCH_IMX8M=y
++CONFIG_TARGET_IMX8MN_550P2_REV2=y
++CONFIG_DEFAULT_DEVICE_TREE="imx8mn-550p2-rev2"
++CONFIG_DEFAULT_FDT_FILE="imx8mn-550p2-rev2.dtb"
++CONFIG_SYS_TEXT_BASE=0x40200000
++CONFIG_SPL_GPIO_SUPPORT=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_SYS_MALLOC_F_LEN=0x10000
++CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_OFFSET=0x400000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_SYS_MEMTEST_START=0x60000000
++CONFIG_SYS_MEMTEST_END=0x70000000
++CONFIG_SYS_I2C_MXC_I2C1=y
++CONFIG_SYS_I2C_MXC_I2C2=y
++CONFIG_SYS_I2C_MXC_I2C3=y
++CONFIG_DM_GPIO=y
++CONFIG_SPL_TEXT_BASE=0x912000
++CONFIG_ARCH_MISC_INIT=y
++CONFIG_SPL_SERIAL_SUPPORT=y
++CONFIG_SPL_DRIVERS_MISC_SUPPORT=y
++CONFIG_SPL=y
++CONFIG_SPL_IMX_ROMAPI_LOADADDR=0x48000000
++CONFIG_CSF_SIZE=0x2000
++CONFIG_DISTRO_DEFAULTS=y
++CONFIG_BOOTCOMMAND="run distro_bootcmd;run bsp_bootcmd"
++CONFIG_FIT=y
++CONFIG_FIT_EXTERNAL_OFFSET=0x3000
++CONFIG_SPL_LOAD_FIT=y
++CONFIG_SPL_FIT_GENERATOR="arch/arm/mach-imx/mkimage_fit_atf.sh"
++CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=arch/arm/mach-imx/imx8m/imximage-8mn-ddr3l.cfg"
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_BOARD_EARLY_INIT_F=y
++CONFIG_SPL_BOARD_INIT=y
++CONFIG_SPL_BOOTROM_SUPPORT=y
++CONFIG_SPL_SEPARATE_BSS=y
++CONFIG_SPL_I2C_SUPPORT=y
++CONFIG_SPL_WATCHDOG_SUPPORT=y
++CONFIG_SPL_POWER_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=2
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="u-boot=> "
++# CONFIG_CMD_EXPORTENV is not set
++# CONFIG_CMD_IMPORTENV is not set
++CONFIG_CMD_ERASEENV=y
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_BOOTM_NETBSD is not set
++CONFIG_CMD_CLK=y
++CONFIG_CMD_FUSE=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_REGULATOR=y
++CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_EXT4_WRITE=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_USB=y
++CONFIG_OF_CONTROL=y
++CONFIG_SPL_OF_CONTROL=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_SYS_MMC_ENV_DEV=1
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_SPL_DM=y
++CONFIG_SPL_CLK_COMPOSITE_CCF=y
++CONFIG_CLK_COMPOSITE_CCF=y
++CONFIG_SPL_CLK_IMX8MN=y
++CONFIG_CLK_IMX8MN=y
++CONFIG_MXC_GPIO=y
++CONFIG_FASTBOOT=y
++CONFIG_USB_FUNCTION_FASTBOOT=y
++CONFIG_CMD_FASTBOOT=y
++CONFIG_ANDROID_BOOT_IMAGE=y
++CONFIG_FASTBOOT_UUU_SUPPORT=y
++CONFIG_FASTBOOT_BUF_ADDR=0x42800000
++CONFIG_FASTBOOT_BUF_SIZE=0x40000000
++CONFIG_FASTBOOT_FLASH=y
++
++CONFIG_DM_I2C=y
++CONFIG_SYS_I2C_MXC=y
++CONFIG_DM_MMC=y
++CONFIG_EFI_PARTITION=y
++CONFIG_SUPPORT_EMMC_BOOT=y
++CONFIG_MMC_IO_VOLTAGE=y
++CONFIG_MMC_UHS_SUPPORT=y
++CONFIG_MMC_HS400_ES_SUPPORT=y
++CONFIG_MMC_HS400_SUPPORT=y
++CONFIG_FSL_ESDHC_IMX=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_DM_SPI=y
++CONFIG_NXP_FSPI=y
++CONFIG_SPI=y
++CONFIG_SPI_FLASH=y
++CONFIG_SPI_FLASH_BAR=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SF_DEFAULT_BUS=0
++CONFIG_SF_DEFAULT_CS=0
++CONFIG_SF_DEFAULT_SPEED=40000000
++CONFIG_SF_DEFAULT_MODE=0
++
++CONFIG_PHYLIB=y
++CONFIG_PHY_ATHEROS=y
++CONFIG_DM_ETH=y
++CONFIG_PHY_GIGE=y
++CONFIG_FEC_MXC=y
++CONFIG_MII=y
++CONFIG_PINCTRL=y
++CONFIG_SPL_PINCTRL=y
++CONFIG_PINCTRL_IMX8M=y
++CONFIG_DM_PMIC=y
++CONFIG_SPL_DM_PMIC_PCA9450=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_MXC_UART=y
++CONFIG_SYSRESET=y
++CONFIG_SYSRESET_PSCI=y
++CONFIG_DM_THERMAL=y
++CONFIG_IMX_TMU=y
++CONFIG_USB_TCPC=y
++CONFIG_USB=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_STORAGE=y
++CONFIG_DM_USB=y
++CONFIG_CI_UDC=y
++CONFIG_USB_EHCI_HCD=y
++
++CONFIG_USB_GADGET_MANUFACTURER="FSL"
++CONFIG_USB_GADGET_VENDOR_NUM=0x0525
++CONFIG_USB_GADGET_PRODUCT_NUM=0xa4a5
++
++CONFIG_OF_LIBFDT_OVERLAY=y
+diff --git a/include/configs/imx8mn-550p2-rev2.h b/include/configs/imx8mn-550p2-rev2.h
+new file mode 100644
+index 0000000000..ff65b80999
+--- /dev/null
++++ b/include/configs/imx8mn-550p2-rev2.h
+@@ -0,0 +1,267 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright 2018 NXP
++ */
++
++#ifndef __IMX8MN_EVK_H
++#define __IMX8MN_EVK_H
++
++#include <linux/sizes.h>
++#include <linux/stringify.h>
++#include <asm/arch/imx-regs.h>
++#include "imx_env.h"
++
++#define CONFIG_SYS_BOOTM_LEN		(32 * SZ_1M)
++
++#define CONFIG_SPL_MAX_SIZE		(208 * 1024)
++#define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
++#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
++#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
++#define CONFIG_SYS_UBOOT_BASE	\
++	(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
++
++#ifdef CONFIG_SPL_BUILD
++#define CONFIG_SPL_STACK		0x95dff0
++#define CONFIG_SPL_BSS_START_ADDR      0x95e000
++#define CONFIG_SPL_BSS_MAX_SIZE		SZ_8K	/* 8 KB */
++#define CONFIG_SYS_SPL_MALLOC_START	0x42200000
++#define CONFIG_SYS_SPL_MALLOC_SIZE	SZ_512K	/* 512 KB */
++
++/* For RAW image gives a error info not panic */
++#define CONFIG_SPL_ABORT_ON_RAW_IMAGE
++
++#if defined(CONFIG_NAND_BOOT)
++#define CONFIG_SPL_NAND_SUPPORT
++#define CONFIG_SPL_DMA
++#define CONFIG_SPL_NAND_MXS
++#define CONFIG_SPL_NAND_BASE
++#define CONFIG_SPL_NAND_IDENT
++#define CONFIG_SYS_NAND_U_BOOT_OFFS 	0x4000000 /* Put the FIT out of first 64MB boot area */
++
++/* Set a redundant offset in nand FIT mtdpart. The new uuu will burn full boot image (not only FIT part) to the mtdpart, so we check both two offsets */
++#define CONFIG_SYS_NAND_U_BOOT_OFFS_REDUND \
++	(CONFIG_SYS_NAND_U_BOOT_OFFS + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512 - 0x8400)
++#endif
++
++#endif
++
++#define CONFIG_CMD_READ
++#define CONFIG_SERIAL_TAG
++#define CONFIG_FASTBOOT_USB_DEV 0
++
++#define CONFIG_REMAKE_ELF
++/* ENET Config */
++/* ENET1 */
++#if defined(CONFIG_FEC_MXC)
++#define CONFIG_ETHPRIME                 "FEC"
++#define PHY_ANEG_TIMEOUT 20000
++
++#define CONFIG_FEC_XCV_TYPE             RGMII
++#define CONFIG_FEC_MXC_PHYADDR          0
++
++#define IMX_FEC_BASE			0x30BE0000
++#endif
++
++#ifdef CONFIG_DISTRO_DEFAULTS
++#define BOOT_TARGET_DEVICES(func) \
++	func(USB, usb, 0) \
++	func(MMC, mmc, 1) \
++	func(MMC, mmc, 2)
++
++#include <config_distro_bootcmd.h>
++#else
++#define BOOTENV
++#endif
++
++/*
++ * Another approach is add the clocks for inmates into clks_init_on
++ * in clk-imx8mm.c, then clk_ingore_unused could be removed.
++ */
++#ifdef CONFIG_TARGET_IMX8MN_DDR4_EVK
++#define JH_ROOT_DTB	"imx8mn-ddr4-evk-root.dtb"
++#else
++#define JH_ROOT_DTB	"imx8mn-evk-root.dtb"
++#endif
++
++#define JAILHOUSE_ENV \
++	"jh_clk= \0 " \
++	"jh_root_dtb=" JH_ROOT_DTB "\0" \
++	"jh_mmcboot=mw 0x303d0518 0xff; setenv fdtfile ${jh_root_dtb};" \
++		"setenv jh_clk clk_ignore_unused mem=1340MB; " \
++			   "if run loadimage; then " \
++				   "run mmcboot; " \
++			   "else run jh_netboot; fi; \0" \
++	"jh_netboot=mw 0x303d0518 0xff; setenv fdtfile ${jh_root_dtb}; setenv jh_clk clk_ignore_unused mem=1340MB; run netboot; \0 "
++
++#define CONFIG_MFG_ENV_SETTINGS \
++	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
++	"initrd_addr=0x43800000\0" \
++	"initrd_high=0xffffffffffffffff\0" \
++	"emmc_dev=2\0"\
++	"sd_dev=1\0" \
++
++/* Initial environment variables */
++#define CONFIG_EXTRA_ENV_SETTINGS		\
++	CONFIG_MFG_ENV_SETTINGS \
++	JAILHOUSE_ENV \
++	BOOTENV \
++	"scriptaddr=0x43500000\0" \
++	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
++	"bsp_script=boot.scr\0" \
++	"image=Image\0" \
++	"splashimage=0x50000000\0" \
++	"console=ttymxc1,115200\0" \
++	"fdt_addr_r=0x43000000\0"			\
++	"fdt_addr=0x43000000\0"			\
++	"fdt_high=0xffffffffffffffff\0"		\
++	"boot_fit=no\0" \
++	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
++	"bootm_size=0x10000000\0" \
++	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
++	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
++	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
++	"mmcautodetect=yes\0" \
++	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
++	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
++	"bootscript=echo Running bootscript from mmc ...; " \
++		"source\0" \
++	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
++	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} ${fdtfile}\0" \
++	"mmcboot=echo Booting from mmc ...; " \
++		"run mmcargs; " \
++		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
++			"bootm ${loadaddr}; " \
++		"else " \
++			"if run loadfdt; then " \
++				"booti ${loadaddr} - ${fdt_addr_r}; " \
++			"else " \
++				"echo WARN: Cannot load the DT; " \
++			"fi; " \
++		"fi;\0" \
++	"netargs=setenv bootargs ${jh_clk} console=${console} " \
++		"root=/dev/nfs " \
++		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
++	"netboot=echo Booting from net ...; " \
++		"run netargs;  " \
++		"if test ${ip_dyn} = yes; then " \
++			"setenv get_cmd dhcp; " \
++		"else " \
++			"setenv get_cmd tftp; " \
++		"fi; " \
++		"${get_cmd} ${loadaddr} ${image}; " \
++		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
++			"bootm ${loadaddr}; " \
++		"else " \
++			"if ${get_cmd} ${fdt_addr_r} ${fdtfile}; then " \
++				"booti ${loadaddr} - ${fdt_addr_r}; " \
++			"else " \
++				"echo WARN: Cannot load the DT; " \
++			"fi; " \
++		"fi;\0" \
++	"bsp_bootcmd=echo Running BSP bootcmd ...; " \
++		"mmc dev ${mmcdev}; if mmc rescan; then " \
++		   "if run loadbootscript; then " \
++			   "run bootscript; " \
++		   "else " \
++			   "if run loadimage; then " \
++				   "run mmcboot; " \
++			   "else run netboot; " \
++			   "fi; " \
++		   "fi; " \
++	   "fi;"
++
++
++/* Link Definitions */
++#define CONFIG_LOADADDR			0x40480000
++
++#define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
++
++#define CONFIG_SYS_INIT_RAM_ADDR        0x40000000
++#define CONFIG_SYS_INIT_RAM_SIZE        0x80000
++#define CONFIG_SYS_INIT_SP_OFFSET \
++	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
++#define CONFIG_SYS_INIT_SP_ADDR \
++	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
++
++#if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
++#define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
++#define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
++#define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
++#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
++#endif
++#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
++
++/* Size of malloc() pool */
++#define CONFIG_SYS_MALLOC_LEN		SZ_32M
++
++#define CONFIG_SYS_SDRAM_BASE           0x40000000
++#define PHYS_SDRAM                      0x40000000
++
++#ifdef CONFIG_TARGET_IMX8MN_DDR3_EVK
++#define PHYS_SDRAM_SIZE			0x40000000 /* 1GB DDR */
++#else
++#define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
++#endif
++
++#define CONFIG_MXC_UART_BASE		UART2_BASE_ADDR
++
++/* Monitor Command Prompt */
++#define CONFIG_SYS_CBSIZE		2048
++#define CONFIG_SYS_MAXARGS		64
++#define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
++#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
++					sizeof(CONFIG_SYS_PROMPT) + 16)
++
++#define CONFIG_IMX_BOOTAUX
++
++/* USDHC */
++#define CONFIG_FSL_USDHC
++
++#define CONFIG_SYS_FSL_USDHC_NUM	2
++#define CONFIG_SYS_FSL_ESDHC_ADDR	0
++
++#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
++
++#ifdef CONFIG_NAND_MXS
++#define CONFIG_CMD_NAND_TRIMFFS
++
++/* NAND stuff */
++#define CONFIG_SYS_MAX_NAND_DEVICE     1
++#define CONFIG_SYS_NAND_BASE           0x20000000
++#define CONFIG_SYS_NAND_5_ADDR_CYCLE
++#define CONFIG_SYS_NAND_ONFI_DETECTION
++#define CONFIG_SYS_NAND_USE_FLASH_BBT
++#endif /* CONFIG_NAND_MXS */
++
++#define CONFIG_SYS_I2C_SPEED		100000
++
++/* USB configs */
++#ifndef CONFIG_SPL_BUILD
++#define CONFIG_USBD_HS
++
++#define CONFIG_CMD_USB_MASS_STORAGE
++#define CONFIG_USB_GADGET_MASS_STORAGE
++#define CONFIG_USB_FUNCTION_MASS_STORAGE
++
++#endif
++
++#define CONFIG_USB_GADGET_VBUS_DRAW 2
++
++#define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
++#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
++
++#ifdef CONFIG_DM_VIDEO
++#define CONFIG_VIDEO_MXS
++#define CONFIG_VIDEO_LOGO
++#define CONFIG_BMP_16BPP
++#define CONFIG_BMP_24BPP
++#define CONFIG_BMP_32BPP
++#define CONFIG_VIDEO_BMP_RLE8
++#define CONFIG_VIDEO_BMP_LOGO
++#endif
++
++#ifdef CONFIG_ANDROID_SUPPORT
++#include "imx8mn_evk_android.h"
++#endif
++
++#endif
+-- 
+2.25.1
+
