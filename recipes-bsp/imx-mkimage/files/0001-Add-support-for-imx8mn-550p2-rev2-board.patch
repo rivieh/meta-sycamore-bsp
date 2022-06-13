@@ -1,0 +1,56 @@
+From 0fac6b6af72ac23e1d5be59855599d9185fec622 Mon Sep 17 00:00:00 2001
+From: Saravanan Sekar <saravanan@linumiz.com>
+Date: Mon, 13 Jun 2022 21:55:01 +0200
+Subject: [PATCH] Add support for imx8mn-550p2-rev2 board
+
+Signed-off-by: Saravanan Sekar <saravanan@linumiz.com>
+---
+ iMX8M/soc.mak | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/iMX8M/soc.mak b/iMX8M/soc.mak
+index 30ecefd..e2cdaf3 100644
+--- a/iMX8M/soc.mak
++++ b/iMX8M/soc.mak
+@@ -173,6 +173,19 @@ u-boot-ddr3l-evk.itb: $(dtbs_ddr3l_evk)
+ 	./mkimage_uboot -E -p 0x3000 -f u-boot-ddr3l-evk.its u-boot-ddr3l-evk.itb
+ 	@rm -f u-boot.its $(dtbs_ddr3l_evk)
+ 
++
++imx8mn_550p2_rev2 = imx8mn-550p2-rev2.dtb
++$(dtbs_imx8mn_550p2_rev2):
++	./$(DTB_PREPROC) $(imx8mn_550p2_rev2)
++
++u-boot-imx8mn-550p2-rev2.itb: $(dtbs_imx8mn_550p2_rev2)
++	./$(PAD_IMAGE) tee.bin
++	./$(PAD_IMAGE) bl31.bin
++	./$(PAD_IMAGE) u-boot-nodtb.bin $(imx8mn_550p2_rev2)
++	DEK_BLOB_LOAD_ADDR=$(DEK_BLOB_LOAD_ADDR) TEE_LOAD_ADDR=$(TEE_LOAD_ADDR) ATF_LOAD_ADDR=$(ATF_LOAD_ADDR) ./mkimage_fit_atf.sh $(imx8mn_550p2_rev2) > u-boot-imx8mn-550p2-rev2.its
++	./mkimage_uboot -E -p 0x3000 -f u-boot-imx8mn-550p2-rev2.its u-boot-imx8mn-550p2-rev2.itb
++	@rm -f u-boot.its $(imx8mn_550p2_rev2)
++
+ dtbs_ddr4 = valddr4.dtb
+ $(dtbs_ddr4):
+ 	./$(DTB_PREPROC) $(PLAT)-ddr4-$(VAL_BOARD).dtb $(dtbs_ddr4)
+@@ -226,6 +239,8 @@ flash_ddr4_evk: flash_ddr4_evk_no_hdmi
+ 
+ flash_ddr3l_evk: flash_ddr3l_evk_no_hdmi
+ 
++flash_imx8mn_550p2_rev2: flash_imx8mn_550p2_rev2_no_hdmi
++
+ flash_ddr3l_val: flash_ddr3l_val_no_hdmi
+ 
+ flash_ddr4_val: flash_ddr4_val_no_hdmi
+@@ -248,6 +263,9 @@ flash_ddr3l_val_no_hdmi: $(MKIMG) u-boot-spl-ddr3l.bin u-boot-ddr3l.itb
+ flash_ddr3l_evk_no_hdmi: $(MKIMG) u-boot-spl-ddr3l.bin u-boot-ddr3l-evk.itb
+ 	./mkimage_imx8 -version $(VERSION) -fit -loader u-boot-spl-ddr3l.bin $(SPL_LOAD_ADDR) -second_loader u-boot-ddr3l-evk.itb 0x40200000 0x60000 -out $(OUTIMG)
+ 
++flash_imx8mn_550p2_rev2_no_hdmi: $(MKIMG) u-boot-spl-ddr3l.bin u-boot-imx8mn-550p2-rev2.itb
++	./mkimage_imx8 -version $(VERSION) -fit -loader u-boot-spl-ddr3l.bin $(SPL_LOAD_ADDR) -second_loader u-boot-imx8mn-550p2-rev2.itb 0x40200000 0x60000 -out $(OUTIMG)
++
+ flash_ddr4_val_no_hdmi: $(MKIMG) u-boot-spl-ddr4.bin u-boot-ddr4.itb
+ 	./mkimage_imx8 -version $(VERSION) -fit -loader u-boot-spl-ddr4.bin $(SPL_LOAD_ADDR) -second_loader u-boot-ddr4.itb 0x40200000 0x60000 -out $(OUTIMG)
+ 
+-- 
+2.25.1
+
